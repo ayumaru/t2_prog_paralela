@@ -358,15 +358,23 @@ int main(int argc, char** argv) {
 			for (int i = 1; i < n_proc; i++) // se for so 1 processo nem entra aqui
 			{
 
-				fprintf(fout, "%s\n", desc_query[i].line);
-				MPI_Recv(&resultados, cabs, rsp, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-				if (!resultados[0].found)
-						fprintf(fout, "NOT FOUND\n");
-
-				for (int w = 0; w < cabs; w++)
+				if(desc_query[i].line[0] != '>')
 				{
-					if(resultados[w].resposta > 0)
-						fprintf(fout, "%s\n%d\n", marcadores[ resultados[w].indice ].text_cab, resultados[w].resposta); 
+					acertos tmp_d[cabs];
+					MPI_Recv(&tmp_d, cabs, rsp, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+				}
+				else
+				{
+					fprintf(fout, "%s\n", desc_query[i].line);
+					MPI_Recv(&resultados, cabs, rsp, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+					if (!resultados[0].found)
+							fprintf(fout, "NOT FOUND\n");
+
+					for (int w = 0; w < cabs; w++)
+					{
+						if(resultados[w].resposta > 0)
+							fprintf(fout, "%s\n%d\n", marcadores[ resultados[w].indice ].text_cab, resultados[w].resposta); 
+					}
 				}
 			}
 		}
