@@ -83,7 +83,6 @@ static inline void remove_eol(char *line) {
 typedef struct{
 	char text_cab[100];
 	char genoma[1000001];
-	// int tam;
 } marcador;
 
 typedef struct{
@@ -121,7 +120,6 @@ int preprocessamento(){
 					break;
 				remove_eol(linha);
 		} while (linha[0] != '>');
-		// marcadores[j].tam = strlen(marcadores[j].genoma); 
 		cabs++;
 		j++;
 		strcpy( marcadores[j].text_cab, linha );
@@ -135,15 +133,12 @@ int preprocessamento(){
 
 char *str;
 
+//msg, tamanho da msg, tipo do dado, comunicador que ta enviando, comunicador que vai receber
 void envia_reconstroi(int cabs, int rank, int n_proc, MPI_Status status, MPI_Datatype pixtype){ 
-	// sai enviando o conjunto genoma + cabecalho + tamanho pra cada um dos processos
+
 	for(int y=0; y <= cabs; y=y+1)
-	{
-		//msg, tamanho da msg, tipo do dado, comunicador que ta enviando, comunicador que vai receber
 		MPI_Bcast(&marcadores[y], 1, pixtype, 0, MPI_COMM_WORLD); 
 
-	}
-// ao final daqui todos os processos teriam uma copia dos marcadores
 }
 	
 
@@ -151,8 +146,6 @@ void envia_reconstroi(int cabs, int rank, int n_proc, MPI_Status status, MPI_Dat
 int main(int argc, char** argv) {
 	
 	int cabs;
-
-	char desc_dna[100]; //, desc_query[100];
 	char line[100];
 	char msg[100];
 	int i,h, found, result;
@@ -183,10 +176,8 @@ int main(int argc, char** argv) {
 	
 	MPI_Type_struct(count,lengths,offsets,oldtypes,&pixtype);
 	MPI_Type_commit(&pixtype);
-	// fim da criacao
 
-	// MPI_Type_contiguous(3,MPI_INT,&rsp);
-	//outra criacao
+
 	count = 3;
 	int tams[3] = {1,1,1};
 	MPI_Datatype n_oldtypes[3] = {MPI_INT, MPI_INT, MPI_INT};
@@ -201,71 +192,40 @@ int main(int argc, char** argv) {
 	{
 		openfiles();
 		cabs = preprocessamento();
-		// isso vai ter que ser revisto depois, talvez na nova politica do while
-		// fgets(desc_query, 100, fquery); 
-		// remove_eol(desc_query);
-		//printf("envio linha 226\n");
+
 		for(int i=1; i<n_proc; i++)
 			MPI_Ssend(&cabs, 1, MPI_INT, i, STD_TAG, MPI_COMM_WORLD);
 	}
 	
-	if (rank != 0 || n_proc == 1)
-	{
-		// printf("Recebe linha 231\n");
+	if (rank != 0) // || n_proc == 1)
 		MPI_Recv(&cabs, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-	}
-	// printf("pre barreira 236\n");
 	
 	
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	cab_q desc_query[n_proc+1];	
-	// acertos resultados[n_proc];
 	acertos resultados[cabs];
-	// termina aqui o if do processo 0
+
 	envia_reconstroi(cabs, rank, n_proc, status, pixtype);
-	
 
-	// for(int i=0; i < n_proc; i++)
-	// {
-	// 	printf("rank: %d || i: %d || cab: %.15s || genoma: %.20s \n", rank, i,marcadores[i].text_cab, marcadores[i].genoma );
-	// }
-
-	// MPI_Finalize();
-	// return 0;
-
-
-	//printf("rank: %d --- pre barreira 237\n", rank);
 	MPI_Barrier(MPI_COMM_WORLD);
-	// flageru de feof inicial
 
 	if(rank == 0)
 	{
 		if(feof(fquery)) // se fim = true
-		{
 			flageru = 1;
-		}
-		//printf("envio 247\n");
+
 		for(int i=1; i<n_proc; i++)
-		{
 			MPI_Ssend(&flageru, 1, MPI_INT, i, STD_TAG, MPI_COMM_WORLD);
-		}
 	}
 
 	if (rank != 0 || n_proc == 1)
-	{
-		//printf("recv 255\n");
 		MPI_Recv(&flageru, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-	}
-	//printf("flageru: %d, rank: %d\n", flageru, rank);
 
 	if (rank == 0)
 	{
 		fgets(line, 100, fquery); //rever a posicao de escrita disso
 		remove_eol(line);
-	// 	fgets(desc_query[1].line, 100, fquery); //rever a posicao de escrita disso
-	// 	remove_eol(desc_query[1].line);
-
 	}
 	
 	int pwq = 0;
@@ -280,60 +240,47 @@ int main(int argc, char** argv) {
 			{
 				flageru = 1;
 			}
-			//printf("envio 269\n");
+			
 			for(int i=1; i<n_proc; i++)
-			{
 				MPI_Ssend(&flageru, 1, MPI_INT, i, STD_TAG, MPI_COMM_WORLD);
-			}
+			
 			if (flageru == 0)
 			{ 
-				// fgets(line, 100, fquery); //rever a posicao de escrita disso
-				// remove_eol(line);
-				// desc_query[1].line = desc_query[5].line;
 				for (int q = 1; q < n_proc; q++ )
 				{
-						strcpy(desc_query[q].line, line); 
-						// fprintf(fout, "%s\n", desc_query[q-1].line);
-						// read query string
-						fgets(line, 100, fquery);  
+					strcpy(desc_query[q].line, line); 
+
+					// read query string
+					fgets(line, 100, fquery);  
+					remove_eol(line);
+					i = 0;
+					do { 
+						strcat(str, line); 
+						if (fgets(line, 100, fquery) == NULL)
+							break;
 						remove_eol(line);
-						i = 0;
-						do { 
-							strcat(str, line); 
-							if (fgets(line, 100, fquery) == NULL)
-								break;
-							remove_eol(line);
-						} while (line[0] != '>');
-						// printf("envio 291\n");
-						if (pwq == 0){
-							printf("query %.15s \n", str);
-						}
-						MPI_Ssend(str, strlen(str)+1, MPI_CHAR, q, STD_TAG, MPI_COMM_WORLD);
-						str[0] = 0;
+					} while (line[0] != '>');
+
+					MPI_Ssend(str, strlen(str)+1, MPI_CHAR, q, STD_TAG, MPI_COMM_WORLD);
+					str[0] = 0;
 				}
-				pwq++;
 			}
 		}
 		resultados[0].found = 0;
 		if (rank != 0 || n_proc == 1)
 		{
-			//printf("recv 298\n");
 			MPI_Recv(&flageru, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-			//printf("flageru: %d, rank: %d \n", flageru, rank);
 			if (flageru == 0) 
 			{
-				//printf("recv 302\n");
 				MPI_Recv(str, 1000001, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				resultados[0].found = 0;
 				for(int y=0; y < cabs; y=y+1)
 				{	
 					resultados[y].resposta = bmhs( marcadores[y].genoma, strlen(marcadores[y].genoma), str, strlen(str)); 
-					// printf("rank:%d || indice y: %d \n", rank, y);
 					resultados[y].indice = y;
-					// printf("rank:%d || res.indice y: %d \n", rank, resultados[y].indice);
-					if (resultados[y].resposta != -1)
-						resultados[0].found++;
-					
+
+					if (resultados[y].resposta > 0)
+						resultados[0].found++;					
 				}
 			}
 		}
@@ -342,33 +289,20 @@ int main(int argc, char** argv) {
 			break;
 		MPI_Barrier(MPI_COMM_WORLD);
 		if (rank != 0 || n_proc == 1)
-		{//	printf("envio 321\n");
 			MPI_Ssend(&resultados, cabs, rsp, 0, STD_TAG, MPI_COMM_WORLD);
-		}
 		else if (rank == 0)
 		{
 			for (int i = 1; i < n_proc; i++)
 			{
-				// printf("recv 327\n");
+
 				MPI_Recv(&resultados, cabs, rsp, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-				// printf("pos recieve 332\n");
-				// printf(" * * * * * \n Hello where: %d || indice: %d ||resposta: %d || ind: %d || found: %d\n * * * * * \n", rank, i ,resultados[2].resposta, resultados[2].indice, resultados[0].found );
-				fprintf(fout, "%s\n", desc_query[i].line);
 				if (!resultados[0].found)
-				{	//printf("dentro do if 334");
 						fprintf(fout, "NOT FOUND\n");
-				}
-				// printf("cabs value: %d \n", cabs);
+
 				for (int w = 0; w < cabs; w++)
 				{
-					// printf("i::: %d || resultado[%d] indice: %d \n",i, w,resultados[w].indice);
-					
-					
-					if(resultados[w].resposta != -1)
-					{
-						// printf("i::: %d || resultado[w] indice: %d \n",i, resultados[w].indice);
+					if(resultados[w].resposta > 0)
 						fprintf(fout, "%s\n%d\n", marcadores[ resultados[w].indice ].text_cab, resultados[w].resposta); 
-					}
 				}
 			}
 		}
