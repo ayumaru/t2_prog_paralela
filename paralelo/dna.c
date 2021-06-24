@@ -295,6 +295,7 @@ int main(int argc, char** argv) {
 			for (int i = 1; i < n_proc; i++)
 			{
 
+				fprintf(fout, "%s\n", desc_query[i].line);
 				MPI_Recv(&resultados, cabs, rsp, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				if (!resultados[0].found)
 						fprintf(fout, "NOT FOUND\n");
