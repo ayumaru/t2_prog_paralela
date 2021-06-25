@@ -235,7 +235,6 @@ int main(int argc, char** argv) {
 		remove_eol(line);
 	}
 	
-	printf("rank: %d || cheguei no while \n", rank);
 	while (flageru == 0){
 		
 		str[0] = 0;
