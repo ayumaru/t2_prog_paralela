@@ -1,5 +1,4 @@
-FLAGS=-O2 \
-	 -fopenmp -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-vectorize -fipa-cp-clone -w
+FLAGS=-O2 -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-vectorize -fipa-cp-clone -w
 
 CC=mpicc
 

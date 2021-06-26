@@ -156,9 +156,12 @@ int main(int argc, char** argv) {
 	MPI_Datatype rsp;
 	int f = 0;
 	int flageru = 0;
+	double f_tempo, i_tempo, d_tempo;
 
 	//comeco da criacao dos processos
 	MPI_Init(&argc, &argv);
+	i_tempo = MPI_Wtime();
+	
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &n_proc);
 	
@@ -203,7 +206,7 @@ int main(int argc, char** argv) {
 			MPI_Ssend(&cabs, 1, MPI_INT, i, STD_TAG, MPI_COMM_WORLD);
 	}
 	
-	if (rank != 0) // || n_proc == 1)
+	if (rank != 0)
 		MPI_Recv(&cabs, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 	
 	
@@ -226,7 +229,7 @@ int main(int argc, char** argv) {
 			MPI_Ssend(&flageru, 1, MPI_INT, i, STD_TAG, MPI_COMM_WORLD);
 	}
 
-	if (rank != 0)// || n_proc == 1)
+	if (rank != 0)
 		MPI_Recv(&flageru, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
 	if (rank == 0)
@@ -234,6 +237,9 @@ int main(int argc, char** argv) {
 		fgets(line, 100, fquery); //rever a posicao de escrita disso
 		remove_eol(line);
 	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	d_tempo = MPI_Wtime();
 	
 	while (flageru == 0){
 		
@@ -257,7 +263,7 @@ int main(int argc, char** argv) {
 				{
 					strcpy(desc_query[q].line, line); 
 
-						// read query string
+					// read query string
 					fgets(line, 100, fquery);  
 					remove_eol(line);
 					i = 0;
@@ -275,8 +281,6 @@ int main(int argc, char** argv) {
 
 					if(n_proc > 1 && q > 0)
 					{
-						// printf("oi, entrei pra entregar mensagem\n");
-						// printf("meu rank: %d, minha query: %.20s \n", q, str );
 						MPI_Ssend(str, strlen(str)+1, MPI_CHAR, q, STD_TAG, MPI_COMM_WORLD);
 						str[0] = 0;
 					}
@@ -287,13 +291,13 @@ int main(int argc, char** argv) {
 		resultados[0].found = 0;
 		
 		if(n_proc > 1 && rank != 0)
-		{	//printf("recebi a mensagem do flageru 278 \n");
+		{	
 			MPI_Recv(&flageru, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 		}
 		if (flageru == 0) 
 		{
 			if (n_proc > 1 && rank !=0)
-			{	//printf("recebendo minha query 284 \n");
+			{	
 				MPI_Recv(str, 1000001, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				resultados[0].found = 0;
 			}
@@ -304,8 +308,7 @@ int main(int argc, char** argv) {
 				{	
 					resultados[y].resposta = bmhs( marcadores[y].genoma, strlen(marcadores[y].genoma), str, strlen(str)); 
 					resultados[y].indice = y;
-					// printf("rank: %d || indice: %d || resposta: %d || query: %.20s \n", rank, y, resultados[y].resposta, desc_query[rank].line);
-
+					
 					if (resultados[y].resposta > 0)
 						resultados[0].found++;					
 				}
@@ -316,8 +319,7 @@ int main(int argc, char** argv) {
 				{	
 					resultados[y].resposta = bmhs( marcadores[y].genoma, strlen(marcadores[y].genoma), str0, strlen(str0)); 
 					resultados[y].indice = y;
-					// printf("rank: %d || indice: %d || resposta: %d || query: %.20s \n", rank, y, resultados[y].resposta, desc_query[rank].line);
-
+					
 					if (resultados[y].resposta > 0)
 						resultados[0].found++;					
 				}
@@ -339,7 +341,6 @@ int main(int argc, char** argv) {
 
 		}
 		
-		// segfault ta aqui pra baixo
 		if (flageru == 1)
 			break;
 		
@@ -353,7 +354,6 @@ int main(int argc, char** argv) {
 		else if (rank == 0 && n_proc > 1)
 		{
 			
-			//printf("entrei aqui na 322 \n");
 			for (int i = 1; i < n_proc; i++) // se for so 1 processo nem entra aqui
 			{
 
@@ -378,12 +378,16 @@ int main(int argc, char** argv) {
 			}
 		}
 	}
-
+	MPI_Barrier(MPI_COMM_WORLD);
+	f_tempo = MPI_Wtime();
 	// libera tudo os processos
 	free(str);
+	free(str0);
 	if (rank == 0)
+	{
 		closefiles();
-	
+		printf("tempo: %lf \n", (f_tempo-d_tempo)/(f_tempo-i_tempo));
+	}
 	MPI_Finalize();
 
 	return EXIT_SUCCESS;
